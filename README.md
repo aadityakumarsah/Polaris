@@ -349,40 +349,71 @@ Keystroke handled by CodeMirror (client-side only)
 
 ## Development & Operations
 
-### Local Development
+### Prerequisites
+
+| Service | Purpose | Sign Up |
+|---|---|---|
+| **Clerk** | Authentication (sign-in, session management) | [clerk.com](https://clerk.com) — create an application |
+| **Convex** | Realtime database + serverless backend | [convex.dev](https://convex.dev) — create a project |
+| **Anthropic** | Claude 3.7 API for AI features | [console.anthropic.com](https://console.anthropic.com) — get an API key |
+| **Firecrawl** (optional) | Web scraping for context-aware AI edits | [firecrawl.dev](https://firecrawl.dev) — get an API key |
+| **Sentry** (optional) | Error monitoring & performance | [sentry.io](https://sentry.io) — get a DSN |
+
+### Setup Steps
 
 ```bash
-# Install dependencies
+# 1. Clone and install dependencies
 pnpm install
 
-# Set up environment (copy template)
-cp .env.local.example .env.local
-# Fill in: CLERK_SECRET_KEY, CONVEX_DEPLOYMENT, POLARIS_CONVEX_INTERNAL_KEY, ANTHROPIC_API_KEY, etc.
+# 2. Copy environment template
+cp .env.example .env.local
 
-# Start Convex dev server (separate terminal)
+# 3. Fill in env vars (see table below)
+
+# 4. Link Convex project (one-time)
+npx convex init
+
+# 5. Start Convex dev server (background)
 npx convex dev
 
-# Start Next.js dev server
+# 6. Start Next.js dev server
 pnpm dev
 
-# Run lint
-pnpm lint
-
-# Build for production
-pnpm build
+# 7. Open http://localhost:3000
 ```
 
 ### Environment Variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `CLERK_SECRET_KEY` | Yes | Clerk secret for JWT verification |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Yes | Clerk publishable key |
-| `CONVEX_DEPLOYMENT` | Yes | Convex deployment name |
-| `POLARIS_CONVEX_INTERNAL_KEY` | Yes | Shared key for system-to-system Convex calls |
-| `ANTHROPIC_API_KEY` | Yes | Claude 3.7 API key |
-| `SENTRY_DSN` | No | Sentry error tracking DSN |
-| `FIRECRAWL_API_KEY` | No | Firecrawl web scraping API key |
+| Variable | Required | Source | Description |
+|---|---|---|---|
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Yes | Clerk Dashboard → API Keys | Public publishable key |
+| `CLERK_SECRET_KEY` | Yes | Clerk Dashboard → API Keys | Secret key for JWT verification |
+| `CLERK_JWT_ISSUER_DOMAIN` | Yes | Clerk Dashboard → JWT Templates | e.g. `https://clerk.[your-app].clerk.accounts.dev` |
+| `NEXT_PUBLIC_CONVEX_URL` | Yes | Convex Dashboard → Deployment Settings | e.g. `https://[your-project].convex.cloud` |
+| `POLARIS_CONVEX_INTERNAL_KEY` | Yes | Generate a random string (`openssl rand -hex 32`) | Shared secret for server-to-server Convex auth |
+| `ANTHROPIC_API_KEY` | Yes | [Anthropic Console](https://console.anthropic.com) | Claude 3.7 Sonnet API key |
+| `FIRECRAWL_API_KEY` | No | [Firecrawl Dashboard](https://firecrawl.dev) | Web scraping (quick-edit URL docs) |
+| `SENTRY_DSN` | No | [Sentry Dashboard](https://sentry.io) | Error and performance monitoring |
+
+### Clerk JWT Configuration
+
+Clerk must be configured to issue JWTs consumable by Convex:
+
+1. In Clerk Dashboard → **JWT Templates**, create a new template or edit the default.
+2. Set **Issuer** as the `CLERK_JWT_ISSUER_DOMAIN`.
+3. In Clerk Dashboard → **Webhooks**, add an endpoint for Convex to sync user lifecycle events.
+4. In `convex/auth.config.ts`, the `CLERK_JWT_ISSUER_DOMAIN` env var must match the Issuer URL.
+
+### Useful Commands
+
+```bash
+pnpm dev          # Start Next.js dev server (port 3000)
+npx convex dev    # Start Convex dev server (background sync)
+npx convex deploy # Deploy Convex functions to production
+pnpm build        # Build Next.js for production
+pnpm start        # Start production server
+pnpm lint         # Run ESLint
+```
 
 ---
 
